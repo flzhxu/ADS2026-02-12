@@ -76,7 +76,7 @@ public class C_GreedyKnapsack {
         double result = 0;
         int currentWeight = 0;
 
-        // we sort with items with the most value
+        // sort in descending order by cost relative to weight
         Arrays.sort(items, Collections.reverseOrder());
 
         i = 0;
