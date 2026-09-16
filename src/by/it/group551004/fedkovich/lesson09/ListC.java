@@ -9,7 +9,7 @@ public class ListC<E> implements List<E> {
     private static final int INITIAL_CAPACITY = 2;
     private Object[] data = new Object[INITIAL_CAPACITY];
     private int cap = INITIAL_CAPACITY;
-    private int len = 0;
+    private int len;
 
     private int getNewCapacity(int minCapacity) {
         int newCap = cap + (cap >> 1);
@@ -19,34 +19,6 @@ public class ListC<E> implements List<E> {
         }
 
         return newCap;
-    }
-
-    private void increaseCapacity(int minCapacity) {
-        int newCap = getNewCapacity(minCapacity);
-        Object[] newData = new Object[newCap];
-
-        System.arraycopy(data, 0, newData, 0, len);
-
-        cap = newCap;
-        data = newData;
-    }
-
-    private void increaseCapacityWithGap(int minCapacity, int gapStartIdx, int gapLen) {
-        int newCap = getNewCapacity(minCapacity);
-        Object[] newData = new Object[newCap];
-
-        System.arraycopy(
-                data, 0,
-                newData, 0,
-                gapStartIdx);
-
-        System.arraycopy(
-                data, gapStartIdx,
-                newData, gapStartIdx + gapLen,
-                len - gapStartIdx);
-
-        cap = newCap;
-        data = newData;
     }
 
     private void shiftLeft(int index, int amount) {
@@ -106,10 +78,18 @@ public class ListC<E> implements List<E> {
 
     @Override
     public boolean add(E e) {
-        if (len == cap)
-            increaseCapacity(len + 1);
+        if (len == cap) {
+            int newCap = getNewCapacity(len + 1);
+            Object[] newData = new Object[newCap];
+
+            System.arraycopy(data, 0, newData, 0, len);
+
+            cap = newCap;
+            data = newData;
+        }
 
         data[len++] = e;
+
         return true;
     }
 
@@ -132,19 +112,22 @@ public class ListC<E> implements List<E> {
 
     @Override
     public void add(int index, E element) {
-        final int GAP_LEN = 1;
-
         if (index < 0 || index > len)
             throw new IndexOutOfBoundsException(index);
 
         if (len == cap) {
-            increaseCapacityWithGap(len + GAP_LEN, index, GAP_LEN);
-        } else {
-            shiftRight(index, 1);
+            int newCap = getNewCapacity(len + 1);
+            Object[] newData = new Object[newCap];
+
+            System.arraycopy(data, 0, newData, 0, len);
+
+            cap = newCap;
+            data = newData;
         }
 
-        data[index] = element;
+        shiftRight(index, 1);
         ++len;
+        data[index] = element;
     }
 
     @Override
@@ -236,8 +219,15 @@ public class ListC<E> implements List<E> {
 
         Object[] arr = c.toArray();
 
-        if (len + lenAdded > cap)
-            increaseCapacity(len + lenAdded);
+        if (len + lenAdded > cap) {
+            int newCap = getNewCapacity(len + lenAdded);
+            Object[] newData = new Object[newCap];
+
+            System.arraycopy(data, 0, newData, 0, len);
+
+            cap = newCap;
+            data = newData;
+        }
 
         int i = len;
         for (Object o : arr) {
@@ -260,7 +250,21 @@ public class ListC<E> implements List<E> {
         Object[] arr = c.toArray();
 
         if (len + lenAdded > cap) {
-            increaseCapacityWithGap(len + lenAdded, index, lenAdded);
+            int newCap = getNewCapacity(len + lenAdded);
+            Object[] newData = new Object[newCap];
+
+            System.arraycopy(
+                    data, 0,
+                    newData, 0,
+                    index);
+
+            System.arraycopy(
+                    data, index,
+                    newData, index + lenAdded,
+                    len - index);
+
+            cap = newCap;
+            data = newData;
         } else {
             shiftRight(index, lenAdded);
         }
@@ -276,26 +280,19 @@ public class ListC<E> implements List<E> {
 
     @Override
     public boolean removeAll(Collection<?> c) {
-        int r = 0;
-        int w = 0;
+        boolean removed = false;
 
-        while (r < len) {
-            if (!c.contains(data[r])) {
-                data[w] = data[r];
-                ++w;
+        int i = 0;
+        while (i < len) {
+            if (c.contains(data[i])) {
+                remove(i);
+                removed = true;
+            } else {
+                ++i;
             }
-            ++r;
         }
 
-        if (w == len)
-            return false;
-
-        for (int i = w; i < len; ++i) {
-            data[i] = null;
-        }
-        len = w;
-
-        return true;
+        return removed;
     }
 
     @Override
